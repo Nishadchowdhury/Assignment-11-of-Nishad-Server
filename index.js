@@ -109,8 +109,24 @@ async function run() {
             res.send(result);
         })
 
-
-
+        //get data by user email
+        app.get('/getCarByUser', async (req, res) => {
+            const userEmail = req.query.email;
+            const query = {email: userEmail};
+            const userSCar = carsCollection.find(query);
+            const carsByEmail = await userSCar.toArray()
+            res.send(carsByEmail)
+        })
+        
+        //get data by user email
+        app.get('/productCountByUser', async (req, res) => {
+            const userEmail = req.query.email;
+            const query = {email: userEmail};
+            const userSCar = carsCollection.find(query);
+            const count = await userSCar.count()
+            res.json(count);
+            // res.send({count})
+        })
 
     }
     finally {
@@ -118,6 +134,7 @@ async function run() {
     }
 }
 
+//npm run start-dev
 
 
 run().catch(console.dir);
