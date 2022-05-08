@@ -4,6 +4,7 @@ require('dotenv').config();
 const port = process.env.PORT || 5000;
 const app = express();
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
+const jwt = require('jsonwebtoken');
 
 // middleWares
 app.use(cors());
@@ -11,6 +12,22 @@ app.use(express.json());
 
 //assignment-11   DbsK9llY47PNPrLd
 
+
+function verifyJWT(req, res, next) {
+    const authHeader = req.headers.authorization;
+    if (!authHeader) {
+        return res.status(401).send({ message: 'unauthorized access' });
+    }
+    const token = authHeader.split(' ')[1]
+    jwt.verify(token, process.env.JWT_TOKEN, (err, decoded) => {
+        if (err) {
+            return res.status(403).send({ message: 'Forbidden access' });
+        }
+        console.log('decoded', decoded);
+        req.decoded = decoded;
+        next();
+    })
+}
 
 
 const uri = `mongodb+srv://${process.env.ASSIGNMENT_DB_USER}:${process.env.ASSIGNMENT_DB_PASS}@cluster0.sv4lg.mongodb.net/myFirstDatabase?retryWrites=true&w=majority`;
@@ -24,6 +41,14 @@ async function run() {
     try {
         await client.connect();
         const carsCollection = client.db('assignment-11').collection('carsData');
+
+
+        //authentication by JWT 
+        app.post('/login', async (req, res) => {
+            const user = req.body;
+            const accessToken = jwt.sign(user, process.env.JWT_TOKEN, { expiresIn: '1d' });
+            res.send({ accessToken });
+        })
 
 
         //getting multipleData for clint site HOME
@@ -110,18 +135,25 @@ async function run() {
         })
 
         //get data by user email
-        app.get('/getCarByUser', async (req, res) => {
+        app.get('/getCarByUser', verifyJWT, async (req, res) => {
+            const decodedEmail = req.decoded.email;
             const userEmail = req.query.email;
-            const query = {email: userEmail};
-            const userSCar = carsCollection.find(query);
-            const carsByEmail = await userSCar.toArray()
-            res.send(carsByEmail)
+
+            if (userEmail === decodedEmail) {
+                const query = { email: userEmail };
+                const userSCar = carsCollection.find(query);
+                const carsByEmail = await userSCar.toArray()
+                res.send(carsByEmail)
+            }
+            else {
+                res.status(403).send({ message: 'forbidden access' })
+            }
         })
-        
+
         //get data by user email
         app.get('/productCountByUser', async (req, res) => {
             const userEmail = req.query.email;
-            const query = {email: userEmail};
+            const query = { email: userEmail };
             const userSCar = carsCollection.find(query);
             const count = await userSCar.count()
             res.json(count);
