@@ -10,9 +10,6 @@ const jwt = require('jsonwebtoken');
 app.use(cors());
 app.use(express.json());
 
-//assignment-11   DbsK9llY47PNPrLd
-
-
 function verifyJWT(req, res, next) {
     const authHeader = req.headers.authorization;
     if (!authHeader) {
@@ -165,9 +162,6 @@ async function run() {
 
     }
 }
-
-//npm run start-dev
-
 
 run().catch(console.dir);
 
